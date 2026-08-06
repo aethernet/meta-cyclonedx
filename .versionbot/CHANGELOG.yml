@@ -1,4 +1,14 @@
 - commits:
+    - subject: "minor: improve bom and vex metadata"
+      hash: a41ac1dc908e28834b7a417b9c1fcdd17e7398f9
+      body: ""
+      footer: {}
+      author: Edwin Joassart
+      nested: []
+  version: 0.1.0
+  title: ""
+  date: 2026-08-06T08:21:37.290Z
+- commits:
     - subject: "patch: add flowzone to the repo"
       hash: 6e6fea82ef0be71cf4cfc81ec4b950b1216e9ee2
       body: ""
