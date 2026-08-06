@@ -1,4 +1,32 @@
 - commits:
+    - subject: "minor: improve bom and vex metadata"
+      hash: a6bf41025f89178833614e8369f8e627ba412dca
+      body: ""
+      footer: {}
+      author: Edwin Joassart
+      nested: []
+    - subject: "patch: add flowzone to the repo"
+      hash: 3da9e9cbd03ed84619ce560871d0195fd1f6fec3
+      body: ""
+      footer: {}
+      author: Edwin Joassart
+      nested: []
+    - subject: "patch: use file patch as CVE fix in VEX"
+      hash: dfa06592074aaba32f33c9ff808f3da6eae2d8d7
+      body: ""
+      footer: {}
+      author: Edwin Joassart
+      nested: []
+    - subject: "patch: fix readme"
+      hash: 0f37766e9cdcf4919d5be85abc54a7219aaf36cb
+      body: ""
+      footer: {}
+      author: Edwin Joassart
+      nested: []
+  version: 0.1.0
+  title: ""
+  date: 2026-08-06T08:21:42.931Z
+- commits:
     - subject: "patch: add flowzone to the repo"
       hash: 3da9e9cbd03ed84619ce560871d0195fd1f6fec3
       body: ""
