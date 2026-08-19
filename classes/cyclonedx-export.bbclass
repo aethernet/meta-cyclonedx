@@ -17,7 +17,9 @@ CYCLONEDX_EXPORT_VEX ??= "${CYCLONEDX_EXPORT_DIR}/vex.json"
 CYCLONEDX_TMP_WORK_DIR ??= "${WORKDIR}/cyclonedx"
 CYCLONEDX_TMP_PN_LIST = "${CYCLONEDX_TMP_WORK_DIR}/pn-list.json"
 CYCLONEDX_WORK_DIR_ROOT ??= "${TMPDIR}/cyclonedx"
-CYCLONEDX_WORK_DIR = "${CYCLONEDX_WORK_DIR_ROOT}/${PN}"
+# Avoids an sstate collision when a recipe builds more than once for this TMPDIR (e.g.
+# multiple machines or a multiconfig). Backported from upstream commit 0170751.
+CYCLONEDX_WORK_DIR = "${CYCLONEDX_WORK_DIR_ROOT}/${SSTATE_PKGARCH}/${PN}"
 CYCLONEDX_WORK_DIR_PN_LIST = "${CYCLONEDX_WORK_DIR}/pn-list.json"
 
 # Shared identifier so separate targets built together (e.g. an image, its flasher, its
@@ -394,24 +396,30 @@ python do_deploy_cyclonedx() {
     # SPDX-FileCopyrightText: Copyright OpenEmbedded Contributors
     # Collect sbom data from runtime packages
 
-    recipes = set()
+    # CYCLONEDX_WORK_DIR is now keyed by SSTATE_PKGARCH as well as PN, so collect full
+    # file paths (rather than PN names re-expanded against the current context) to
+    # correctly find data written under a different arch bucket.
+    pn_list_filepaths = set()
     if d.getVar('CYCLONEDX_RUNTIME_PACKAGES_ONLY') == "1":
+        save_pn = d.getVar("PN")
         for pkg in list(image_list_installed_packages(d)):
             pkg_info = os.path.join(d.getVar('PKGDATA_DIR'),
                                     'runtime-reverse', pkg)
             pkg_data = oe.packagedata.read_pkgdatafile(pkg_info)
-            recipes.add(pkg_data["PN"])
+            # To be able to use the CYCLONEDX_WORK_DIR_PN_LIST variable we have to evaluate
+            # it with the different PN names set each time.
+            d.setVar("PN", pkg_data["PN"])
+            pn_list_filepaths.add(d.getVar("CYCLONEDX_WORK_DIR_PN_LIST"))
+        d.setVar("PN", save_pn)
     else:
-        recipes = {pn for pn in os.listdir(cyclonedx_work_dir_root) if os.path.isdir(os.path.join(cyclonedx_work_dir_root, pn))}
+        for arch in os.listdir(cyclonedx_work_dir_root):
+            arch_dir = os.path.join(cyclonedx_work_dir_root, arch)
+            if not os.path.isdir(arch_dir):
+                continue
+            for pn in os.listdir(arch_dir):
+                pn_list_filepaths.add(os.path.join(arch_dir, pn, "pn-list.json"))
 
-    save_pn = d.getVar("PN")
-    for pkg in recipes:
-        # To be able to use the CYCLONEDX_WORK_DIR_PN_LIST variable we have to evaluate
-        # it with the different PN names set each time.
-        d.setVar("PN", pkg)
-
-        pn_list_filepath = d.getVar("CYCLONEDX_WORK_DIR_PN_LIST")
-
+    for pn_list_filepath in pn_list_filepaths:
         if not os.path.exists(pn_list_filepath):
             continue
 
@@ -428,8 +436,6 @@ python do_deploy_cyclonedx() {
             pn_cve["affects"][0]["ref"] = pn_cve["affects"][0]["ref"].replace(
                 d.getVar('CYCLONEDX_SBOM_SERIAL_PLACEHOLDER'), sbom_serial_number)
             vex["vulnerabilities"].append(pn_cve)
-
-    d.setVar("PN", save_pn)
 
     write_json(d.getVar("CYCLONEDX_EXPORT_SBOM"), sbom)
     write_json(d.getVar("CYCLONEDX_EXPORT_VEX"), vex)
